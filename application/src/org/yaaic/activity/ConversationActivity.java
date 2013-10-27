@@ -427,6 +427,16 @@ public class ConversationActivity extends SherlockActivity implements ServiceCon
         return true;
     }
 
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        super.onPrepareOptionsMenu(menu);
+
+        menu.findItem(R.id.connect).setVisible(server.isDisconnected());
+        menu.findItem(R.id.disconnect).setVisible(!server.isDisconnected());
+
+        return true;
+        }
+    
     /**
      * On menu item selected
      */
@@ -437,6 +447,11 @@ public class ConversationActivity extends SherlockActivity implements ServiceCon
             case  android.R.id.home:
                 finish();
                 break;
+
+           case R.id.connect:
+               server.setStatus(Status.CONNECTING);
+               binder.connect(server);
+               break;
 
             case R.id.disconnect:
                 server.setStatus(Status.DISCONNECTED);
@@ -595,6 +610,8 @@ public class ConversationActivity extends SherlockActivity implements ServiceCon
     public void onStatusUpdate()
     {
         EditText input = (EditText) findViewById(R.id.input);
+
+        supportInvalidateOptionsMenu();
 
         if (server.isConnected()) {
             input.setEnabled(true);
