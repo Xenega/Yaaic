@@ -24,9 +24,14 @@ import java.util.LinkedList;
 
 import org.yaaic.model.Conversation;
 import org.yaaic.model.Message;
+import org.yaaic.model.Settings;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.database.DataSetObserver;
+import android.graphics.Typeface;
+import android.os.Build;
+import android.text.util.Linkify;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -39,7 +44,9 @@ import android.widget.TextView;
  */
 public class MessageListAdapter extends BaseAdapter
 {
-    private final LinkedList<TextView> messages;
+    private final Settings settings;
+
+    private final LinkedList<CharSequence> messages;
     private final Context context;
     private int historySize;
 
@@ -52,7 +59,8 @@ public class MessageListAdapter extends BaseAdapter
     public MessageListAdapter(Conversation conversation, Context context)
     {
         this.context = context;
-        this.messages = new LinkedList<TextView>();
+        this.messages = new LinkedList<CharSequence>();
+        this.settings = new Settings(context);
 
         udpate(conversation, true);
 
@@ -66,7 +74,7 @@ public class MessageListAdapter extends BaseAdapter
      */
     public void addMessage(Message message)
     {
-        messages.add(message.renderTextView(context));
+        messages.add(message.render(context));
 
         if (messages.size() > historySize) {
             messages.remove(1);
@@ -82,12 +90,12 @@ public class MessageListAdapter extends BaseAdapter
      */
     public void addBulkMessages(LinkedList<Message> messages)
     {
-        LinkedList<TextView> mMessages = this.messages;
+        LinkedList<CharSequence> mMessages = this.messages;
         Context mContext = this.context;
         int mSize = messages.size();
 
         for (int i = mSize - 1; i > -1; i--) {
-            mMessages.add(messages.get(i).renderTextView(mContext));
+            mMessages.add(messages.get(i).render(mContext));
 
             if (mMessages.size() > historySize) {
                 mMessages.remove(1);
@@ -115,7 +123,7 @@ public class MessageListAdapter extends BaseAdapter
      * @return
      */
     @Override
-    public TextView getItem(int position)
+    public CharSequence getItem(int position)
     {
         return messages.get(position);
     }
@@ -143,7 +151,30 @@ public class MessageListAdapter extends BaseAdapter
     @Override
     public View getView(int position, View convertView, ViewGroup parent)
     {
-        return getItem(position);
+        TextView view = (TextView)convertView;
+        if (view == null) {
+            view = new TextView(context);
+
+            view.setAutoLinkMask(Linkify.ALL);
+            view.setLinksClickable(true);
+            view.setLinkTextColor(Message.COLOR_BLUE);
+            view.setTypeface(Typeface.MONOSPACE);
+            view.setTextColor(Message.COLOR_DEFAULT);
+        }
+
+        view.setText(getItem(position));
+        view.setTextSize(settings.getFontSize());
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+            setupViewForHoneycombAndLater(view);
+        }
+
+        return view;
+    }
+
+    @TargetApi(11)
+    private void setupViewForHoneycombAndLater(TextView canvas) {
+        canvas.setTextIsSelectable(true);
     }
 
     /**
@@ -177,7 +208,7 @@ public class MessageListAdapter extends BaseAdapter
         if (conversation.getType() != Conversation.TYPE_SERVER) {
             Message header = new Message(conversation.getName());
             header.setColor(Message.COLOR_RED);
-            messages.add(header.renderTextView(context));
+            messages.add(header.render(context));
         }
 
         // Optimization - cache field lookups
@@ -185,7 +216,7 @@ public class MessageListAdapter extends BaseAdapter
         int mSize = mHistory.size();
 
         for (int i = 0; i < mSize; i++) {
-            messages.add(mHistory.get(i).renderTextView(context));
+            messages.add(mHistory.get(i).render(context));
         }
 
         // XXX: We don't want to clear the buffer, we want to add only
