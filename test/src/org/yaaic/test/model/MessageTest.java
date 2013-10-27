@@ -62,12 +62,14 @@ public class MessageTest extends TestCase
 
 		message.setTimestamp(1270505773862l);
 
-		assertEquals("[00:16] ", message.renderTimeStamp(false));
-		assertEquals("[00:16] ", message.renderTimeStamp(true));
+		assertEquals("[00:16] ", message.renderTimeStamp(false, false));
+		assertEquals("[00:16] ", message.renderTimeStamp(true, false));
+		assertEquals("[00:16:13] ", message.renderTimeStamp(true, true));
 
 		message.setTimestamp(1270908275000l);
 
-		assertEquals("[04:04] ", message.renderTimeStamp(false));
-		assertEquals("[16:04] ", message.renderTimeStamp(true));
+		assertEquals("[04:04] ", message.renderTimeStamp(false, false));
+		assertEquals("[16:04] ", message.renderTimeStamp(true, false));
+		assertEquals("[16:04:35] ", message.renderTimeStamp(true, true));
 	}
 }
