@@ -5,6 +5,11 @@ bin/
 gen/
 R.java
 
+# Eclipse project files
+.classpath
+.project
+.settings
+
 # Build files
 local.properties
 ant.properties
