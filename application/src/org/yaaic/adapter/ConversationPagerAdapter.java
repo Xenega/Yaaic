@@ -24,7 +24,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 
 import org.yaaic.indicator.ConversationStateProvider;
-import org.yaaic.listener.MessageClickListener;
 import org.yaaic.model.Conversation;
 import org.yaaic.model.Server;
 import org.yaaic.view.MessageListView;
@@ -254,7 +253,6 @@ public class ConversationPagerAdapter extends PagerAdapter implements Conversati
     {
         MessageListView list = new MessageListView(parent.getContext());
         convInfo.view = list;
-        list.setOnItemClickListener(MessageClickListener.getInstance());
 
         MessageListAdapter adapter = convInfo.adapter;
 

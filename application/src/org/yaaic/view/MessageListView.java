@@ -21,10 +21,14 @@ along with Yaaic.  If not, see <http://www.gnu.org/licenses/>.
 package org.yaaic.view;
 
 import org.yaaic.R;
+import org.yaaic.activity.MessageActivity;
 import org.yaaic.adapter.MessageListAdapter;
-import org.yaaic.listener.MessageClickListener;
+import org.yaaic.model.Extra;
 
 import android.content.Context;
+import android.content.Intent;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ListView;
 
 /**
@@ -43,7 +47,7 @@ public class MessageListView extends ListView
     {
         super(context);
 
-        setOnItemClickListener(MessageClickListener.getInstance());
+        setOnItemLongClickListener(messageListener);
 
         setDivider(null);
 
@@ -71,4 +75,16 @@ public class MessageListView extends ListView
     {
         return (MessageListAdapter) super.getAdapter();
     }
+
+    private ListView.OnItemLongClickListener messageListener = new ListView.OnItemLongClickListener() {
+        public boolean onItemLongClick(AdapterView<?> group, View view, int position, long id) {
+            MessageListAdapter adapter = (MessageListAdapter) group.getAdapter();
+
+            Intent intent = new Intent(group.getContext(), MessageActivity.class);
+            intent.putExtra(Extra.MESSAGE, adapter.getItem(position).toString());
+            group.getContext().startActivity(intent);
+
+            return true;
+        }
+    };
 }
