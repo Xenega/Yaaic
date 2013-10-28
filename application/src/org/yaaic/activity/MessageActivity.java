@@ -47,7 +47,7 @@ public class MessageActivity extends Activity
         setContentView(R.layout.message);
 
         ((TextView) findViewById(R.id.message)).setText(
-            getIntent().getExtras().getString(Extra.MESSAGE)
+            getIntent().getCharSequenceExtra(Extra.MESSAGE)
         );
     }
 }

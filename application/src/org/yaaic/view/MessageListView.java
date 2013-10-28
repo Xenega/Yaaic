@@ -81,7 +81,7 @@ public class MessageListView extends ListView
             MessageListAdapter adapter = (MessageListAdapter) group.getAdapter();
 
             Intent intent = new Intent(group.getContext(), MessageActivity.class);
-            intent.putExtra(Extra.MESSAGE, adapter.getItem(position).toString());
+            intent.putExtra(Extra.MESSAGE, adapter.getItem(position));
             group.getContext().startActivity(intent);
 
             return true;
