@@ -300,7 +300,7 @@ public class ServersActivity extends SherlockActivity implements ServiceConnecti
                     }
                 }
                 // ugly
-                binder.getService().stopForegroundCompat(R.string.app_name);
+                binder.getService().stopForeground(true);
         }
 
         return true;
