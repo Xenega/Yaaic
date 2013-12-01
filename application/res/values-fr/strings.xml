@@ -136,7 +136,7 @@
   <string name="message_join">%1$s rejoint le canal</string>
   <string name="message_kick">%1$s expulse %2$s</string>
   <string name="message_rename">%1$s s\'appelle désormais %2$s</string>
-  <string name="message_self_rename">Vous vous appelez désormais $1$s</string>
+  <string name="message_self_rename">Vous vous appelez désormais %1$s</string>
   <string name="message_op">%1$s donne le statut d\'opérateur à %2$s</string>
   <string name="message_part">%1$s quitte le canal</string>
   <string name="message_quit">%1$s quitte le serveur (%2$s)</string>
