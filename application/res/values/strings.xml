@@ -241,6 +241,8 @@
     <string name="settings_debug_traffic_desc">Log IRC traffic to the verbose log. This may be a security risk!</string>
     <string name="settings_notification_ringstone_title">Notification Ringstone</string>
     <string name="settings_notification_ringstone_desc">The sound played with new notifications.</string>
+    <string name="settings_hide_raw_topic_title">Hide topic message</string>
+    <string name="settings_hide_raw_topic_desc">Hide the topic messages except when user manualy ask it with /topic</string>
 
     <string name="minute_1">1 minute</string>
     <string name="minutes_5">5 minutes</string>
