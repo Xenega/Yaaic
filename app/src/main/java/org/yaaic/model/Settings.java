@@ -378,4 +378,15 @@ public class Settings
             resources.getString(R.string.default_notification_ringstone)
         ));
     }
+
+    /**
+     * Whether the raw topic messages should be hidden.
+     */
+    public boolean hideTopicMessage()
+    {
+        return preferences.getBoolean(
+                resources.getString(R.string.key_hide_raw_topic),
+                Boolean.parseBoolean(resources.getString(R.string.default_hide_raw_topic))
+        );
+    }
 }

@@ -71,4 +71,8 @@
 
     <string name="key_notification_ringstone" translatable="false">notification_ringstone</string>
     <string name="default_notification_ringstone" translatable="false">content://settings/system/notification_sound</string>
+
+    <string name="key_hide_raw_topic" translatable="false">hide_raw_topic</string>
+    <string name="default_hide_raw_topic" translatable="false">false</string>
+
 </resources>

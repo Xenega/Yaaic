@@ -45,6 +45,7 @@ import org.yaaic.model.ServerInfo;
 import org.yaaic.model.Status;
 
 import android.content.Intent;
+import android.text.method.HideReturnsTransformationMethod;
 import android.util.Log;
 
 /**
@@ -766,6 +767,12 @@ public class IRCConnection extends PircBot
     @Override
     public void onTopic(String target, String topic, String setBy, long date, boolean changed)
     {
+        // remember channel's topic
+        ((Channel) server.getConversation(target)).setTopic(topic);
+
+        if (service.getSettings().hideTopicMessage())
+            return;
+
         if (changed) {
             Message message = new Message(service.getString(R.string.message_topic_set, setBy, topic));
             message.setColor(Message.COLOR_YELLOW);
@@ -775,9 +782,6 @@ public class IRCConnection extends PircBot
             message.setColor(Message.COLOR_YELLOW);
             server.getConversation(target).addMessage(message);
         }
-
-        // remember channel's topic
-        ((Channel) server.getConversation(target)).setTopic(topic);
 
         Intent intent = Broadcast.createConversationIntent(
             Broadcast.CONVERSATION_MESSAGE,
