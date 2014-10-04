@@ -239,6 +239,8 @@
     <string name="settings_history_size_desc">Number of lines of conversation history to keep</string>
     <string name="settings_debug_traffic_title">Debug IRC traffic</string>
     <string name="settings_debug_traffic_desc">Log IRC traffic to the verbose log. This may be a security risk!</string>
+    <string name="settings_notification_ringstone_title">Notification Ringstone</string>
+    <string name="settings_notification_ringstone_desc">The sound played with new notifications.</string>
 
     <string name="minute_1">1 minute</string>
     <string name="minutes_5">5 minutes</string>
