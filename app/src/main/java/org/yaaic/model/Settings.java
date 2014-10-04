@@ -24,6 +24,7 @@ package org.yaaic.model;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.net.Uri;
 import android.preference.PreferenceManager;
 
 import org.yaaic.R;
@@ -368,5 +369,13 @@ public class Settings
         } catch (NumberFormatException e) {
             return Integer.parseInt(resources.getString(R.string.default_history_size));
         }
+    }
+
+    public Uri getNotificationRingstone() 
+    {
+        return Uri.parse(preferences.getString(
+            resources.getString(R.string.key_notification_ringstone),
+            resources.getString(R.string.default_notification_ringstone)
+        ));
     }
 }

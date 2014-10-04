@@ -228,7 +228,7 @@ public class IRCService extends Service
         }
 
         if (sound) {
-            defaults |= Notification.DEFAULT_SOUND;
+            builder.setSound(getSettings().getNotificationRingstone());
         }
 
         if (light) {

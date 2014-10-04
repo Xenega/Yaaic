@@ -68,4 +68,7 @@
 
     <string name="key_debug_traffic" translatable="false">debug_traffic</string>
     <string name="default_debug_traffic" translatable="false">false</string>
+
+    <string name="key_notification_ringstone" translatable="false">notification_ringstone</string>
+    <string name="default_notification_ringstone" translatable="false">content://settings/system/notification_sound</string>
 </resources>

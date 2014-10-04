@@ -160,5 +160,13 @@ along with Yaaic.  If not, see <http://www.gnu.org/licenses/>.
             android:summary="@string/settings_debug_traffic_desc"
             android:key="@string/key_debug_traffic"
             android:defaultValue="@string/default_debug_traffic" />
+        <RingtonePreference
+            android:title="@string/settings_notification_ringstone_title"
+            android:summary="@string/settings_notification_ringstone_desc"
+            android:ringtoneType="notification"
+            android:showDefault="true"
+            android:showSilent="true"
+            android:key="@string/key_notification_ringstone"
+            android:defaultValue="@string/default_notification_ringstone" />
     </PreferenceCategory>
 </PreferenceScreen>
