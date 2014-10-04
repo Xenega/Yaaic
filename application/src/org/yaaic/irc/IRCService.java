@@ -49,6 +49,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.SystemClock;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v4.app.NotificationCompat;
 
 /**
  * The background service for managing the irc connections
@@ -175,17 +176,7 @@ public class IRCService extends Service
             }
             foreground = true;
 
-            // Set the icon, scrolling text and timestamp
-            notification = new Notification(R.drawable.icon, getText(R.string.notification_running), System.currentTimeMillis());
-
-            // The PendingIntent to launch our activity if the user selects this notification
-            Intent notifyIntent = new Intent(this, ServersActivity.class);
-            notifyIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notifyIntent, 0);
-
-            // Set the info for the views that show in the notification panel.
-            notification.setLatestEventInfo(this, getText(R.string.app_name), getText(R.string.notification_not_connected), contentIntent);
-
+            notification = buildNotification(getText(R.string.notification_running), getText(R.string.notification_not_connected), false, false, false);
             startForeground(FOREGROUND_NOTIFICATION, notification);
         } else if (ACTION_BACKGROUND.equals(intent.getAction()) && !foreground) {
             stopForeground(true);
@@ -206,50 +197,73 @@ public class IRCService extends Service
     private void updateNotification(String text, String contentText, boolean vibrate, boolean sound, boolean light)
     {
         if (foreground) {
-            notification = new Notification(R.drawable.icon, text, System.currentTimeMillis());
-            Intent notifyIntent = new Intent(this, ServersActivity.class);
-            notifyIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notifyIntent, 0);
-
-            if (contentText == null) {
-                if (newMentions >= 1) {
-                    StringBuilder sb = new StringBuilder();
-                    for (Conversation conv : mentions.values()) {
-                        sb.append(conv.getName() + " (" + conv.getNewMentions() + "), ");
-                    }
-                    contentText = getString(R.string.notification_mentions, sb.substring(0, sb.length()-2));
-                } else if (!connectedServerTitles.isEmpty()) {
-                    StringBuilder sb = new StringBuilder();
-                    for (String title : connectedServerTitles) {
-                        sb.append(title + ", ");
-                    }
-                    contentText = getString(R.string.notification_connected, sb.substring(0, sb.length()-2));
-                } else {
-                    contentText = getString(R.string.notification_not_connected);
-                }
-            }
-
-            notification.setLatestEventInfo(this, getText(R.string.app_name), contentText, contentIntent);
-
-            if (vibrate) {
-                notification.defaults |= Notification.DEFAULT_VIBRATE;
-            }
-
-            if (sound) {
-                notification.defaults |= Notification.DEFAULT_SOUND;
-            }
-
-            if (light) {
-                notification.ledARGB   = NOTIFICATION_LED_COLOR;
-                notification.ledOnMS   = NOTIFICATION_LED_ON_MS;
-                notification.ledOffMS  = NOTIFICATION_LED_OFF_MS;
-                notification.flags    |= Notification.FLAG_SHOW_LIGHTS;
-            }
-
-            notification.number = newMentions;
-
+            notification = buildNotification(text, contentText, vibrate, sound, light);
             notificationManager.notify(FOREGROUND_NOTIFICATION, notification);
         }
+    }
+
+    /**
+     * Build the notification
+     *
+     * @param text       The ticker text to display
+     * @param contentText       The text to display in the notification dropdown
+     * @param vibrate True if the device should vibrate, false otherwise
+     * @param sound True if the device should make sound, false otherwise
+     * @param light True if the device should flash a LED light, false otherwise
+     */
+    private Notification buildNotification(CharSequence text, CharSequence contentText, boolean vibrate, boolean sound, boolean light) {
+        int defaults = 0;
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
+
+        // Set the icon, scrolling text and timestamp
+        builder.setTicker(text);
+        builder.setSmallIcon(R.drawable.icon);
+        builder.setWhen(System.currentTimeMillis());
+
+        // The PendingIntent to launch our activity if the user selects this notification
+        Intent notifyIntent = new Intent(this, ServersActivity.class);
+        notifyIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notifyIntent, 0);
+
+        if (contentText == null) {
+            if (newMentions >= 1) {
+                StringBuilder sb = new StringBuilder();
+                for (Conversation conv : mentions.values()) {
+                    sb.append(conv.getName() + " (" + conv.getNewMentions() + "), ");
+                }
+                contentText = getString(R.string.notification_mentions, sb.substring(0, sb.length()-2));
+            } else if (!connectedServerTitles.isEmpty()) {
+                StringBuilder sb = new StringBuilder();
+                for (String title : connectedServerTitles) {
+                    sb.append(title + ", ");
+                }
+                contentText = getString(R.string.notification_connected, sb.substring(0, sb.length()-2));
+            } else {
+                contentText = getString(R.string.notification_not_connected);
+            }
+        }
+
+        // Set the info for the views that show in the notification panel.
+        builder.setContentTitle(getText(R.string.app_name));
+        builder.setContentText(contentText);
+        builder.setContentIntent(contentIntent);
+
+        if (vibrate) {
+            defaults |= Notification.DEFAULT_VIBRATE;
+        }
+
+        if (sound) {
+            defaults |= Notification.DEFAULT_SOUND;
+        }
+
+        if (light) {
+            builder.setLights(NOTIFICATION_LED_COLOR, NOTIFICATION_LED_ON_MS, NOTIFICATION_LED_OFF_MS);
+        }
+
+        builder.setDefaults(defaults);
+        builder.setNumber(newMentions);
+        
+        return builder.build();
     }
 
     /**
