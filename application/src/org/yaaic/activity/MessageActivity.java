@@ -23,7 +23,14 @@ package org.yaaic.activity;
 import org.yaaic.R;
 import org.yaaic.model.Extra;
 
+import com.actionbarsherlock.app.SherlockFragmentActivity;
+import com.actionbarsherlock.view.ActionMode;
+import com.actionbarsherlock.view.Menu;
+import com.actionbarsherlock.view.MenuInflater;
+import com.actionbarsherlock.view.MenuItem;
+
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.Window;
 import android.widget.TextView;
@@ -33,8 +40,10 @@ import android.widget.TextView;
  * 
  * @author Sebastian Kaspari <sebastian@yaaic.org>
  */
-public class MessageActivity extends Activity
+public class MessageActivity extends SherlockFragmentActivity
 {
+    private CharSequence message;
+    
     /**
      * On create
      */
@@ -46,8 +55,50 @@ public class MessageActivity extends Activity
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.message);
 
-        ((TextView) findViewById(R.id.message)).setText(
-            getIntent().getCharSequenceExtra(Extra.MESSAGE)
-        );
+        message = getIntent().getCharSequenceExtra(Extra.MESSAGE);
+        ((TextView) findViewById(R.id.message)).setText(message);
+
+        startActionMode(actionModeCallback);
     }
+
+    private ActionMode.Callback actionModeCallback = new ActionMode.Callback() 
+    {
+        @Override
+        public boolean onCreateActionMode(ActionMode mode, Menu menu) 
+        {
+            mode.setTitle(getString(R.string.mode_message_title));
+            mode.setSubtitle(null);
+
+            MenuInflater inflater = mode.getMenuInflater();
+            inflater.inflate(R.menu.message, menu);
+
+            setResult(Activity.RESULT_CANCELED, null);
+
+            return true;
+        }
+
+        @Override
+        public boolean onPrepareActionMode(ActionMode mode, Menu menu) 
+        {
+            return true;
+        }
+
+        @Override
+        public boolean onActionItemClicked(ActionMode mode, MenuItem item) 
+        {
+            Intent data = new Intent();
+            data.putExtra(Extra.MESSAGE, message);
+            data.putExtra(Extra.ACTION, item.getItemId());
+            setResult(Activity.RESULT_OK, data);
+
+            finish();
+            return true;
+        }
+
+        @Override
+        public void onDestroyActionMode(ActionMode mode) 
+        {
+            finish();
+        }
+    };
 }

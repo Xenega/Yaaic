@@ -21,10 +21,12 @@ along with Yaaic.  If not, see <http://www.gnu.org/licenses/>.
 package org.yaaic.view;
 
 import org.yaaic.R;
+import org.yaaic.activity.ConversationActivity;
 import org.yaaic.activity.MessageActivity;
 import org.yaaic.adapter.MessageListAdapter;
 import org.yaaic.model.Extra;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.view.View;
@@ -82,7 +84,7 @@ public class MessageListView extends ListView
 
             Intent intent = new Intent(group.getContext(), MessageActivity.class);
             intent.putExtra(Extra.MESSAGE, adapter.getItem(position));
-            group.getContext().startActivity(intent);
+            ((Activity)group.getContext()).startActivityForResult(intent, ConversationActivity.REQUEST_CODE_MESSAGE);
 
             return true;
         }

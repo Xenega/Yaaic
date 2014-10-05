@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+    <item
+        android:id="@+id/copy"
+        android:title="@string/menu_message_copy"
+        android:icon="?android:attr/actionModeCopyDrawable"
+        android:showAsAction="always|withText" />
+    <item
+        android:id="@+id/respond"
+        android:title="@string/menu_message_respond"
+        android:icon="@android:drawable/ic_menu_edit"
+        android:showAsAction="always|withText" />
+</menu>

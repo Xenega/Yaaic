@@ -250,4 +250,8 @@
     <string name="minutes_15">15 minutes</string>
     <string name="minutes_20">20 minutes</string>
     <string name="minutes_30">30 minutes</string>
+    
+    <string name="mode_message_title">Message</string>
+    <string name="menu_message_copy">Copy</string>
+    <string name="menu_message_respond">Respond</string>
 </resources>

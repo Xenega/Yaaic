@@ -52,6 +52,8 @@ import org.yaaic.receiver.ConversationReceiver;
 import org.yaaic.receiver.ServerReceiver;
 
 import android.app.AlertDialog;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.ComponentName;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -92,6 +94,7 @@ import com.actionbarsherlock.view.MenuItem;
 public class ConversationActivity extends SherlockActivity implements ServiceConnection, ServerListener, ConversationListener
 {
     public static final int REQUEST_CODE_SPEECH = 99;
+    public static final int REQUEST_CODE_MESSAGE = 98;
 
     private static final int REQUEST_CODE_JOIN = 1;
     private static final int REQUEST_CODE_USERS = 2;
@@ -678,6 +681,24 @@ public class ConversationActivity extends SherlockActivity implements ServiceCon
                 if (matches.size() > 0) {
                     ((EditText) findViewById(R.id.input)).setText(matches.get(0));
                 }
+                break;
+            case REQUEST_CODE_MESSAGE:
+                final int messageActionId = data.getExtras().getInt(Extra.ACTION);
+                final CharSequence message = data.getExtras().getCharSequence(Extra.MESSAGE);
+
+                switch (messageActionId) {
+                case R.id.copy:
+                    ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE); 
+                    ClipData clip = ClipData.newPlainText("message", message);
+                    clipboard.setPrimaryClip(clip);
+                    break;
+                case R.id.respond:
+                    EditText input = (EditText) findViewById(R.id.input);
+                    input.setText(message + " >>> ");
+                    input.setSelection(message.length() + 5);
+                    break;
+                }
+
                 break;
             case REQUEST_CODE_JOIN:
                 joinChannelBuffer = data.getExtras().getString("channel");
