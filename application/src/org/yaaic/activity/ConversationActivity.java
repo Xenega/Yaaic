@@ -280,6 +280,7 @@ public class ConversationActivity extends SherlockActivity implements ServiceCon
         registerReceiver(channelReceiver, new IntentFilter(Broadcast.CONVERSATION_MESSAGE));
         registerReceiver(channelReceiver, new IntentFilter(Broadcast.CONVERSATION_NEW));
         registerReceiver(channelReceiver, new IntentFilter(Broadcast.CONVERSATION_REMOVE));
+        registerReceiver(channelReceiver, new IntentFilter(Broadcast.CONVERSATION_CLEAR));
         registerReceiver(channelReceiver, new IntentFilter(Broadcast.CONVERSATION_TOPIC));
 
         serverReceiver = new ServerReceiver(this);
@@ -565,6 +566,15 @@ public class ConversationActivity extends SherlockActivity implements ServiceCon
 
         if (position != -1) {
             pagerAdapter.removeConversation(position);
+        }
+    }
+
+    @Override
+    public void onClearConversation(String target) {
+        int position = pagerAdapter.getPositionByName(target);
+
+        if (position != -1) {
+            pagerAdapter.clearConversation(position);
         }
     }
 
