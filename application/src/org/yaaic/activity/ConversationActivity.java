@@ -65,6 +65,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.speech.RecognizerIntent;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.ViewPager;
 import android.text.InputType;
 import android.text.method.TextKeyListener;
@@ -277,13 +278,13 @@ public class ConversationActivity extends SherlockActivity implements ServiceCon
     {
         // register the receivers as early as possible, otherwise we may loose a broadcast message
         channelReceiver = new ConversationReceiver(server.getId(), this);
-        registerReceiver(channelReceiver, new IntentFilter(Broadcast.CONVERSATION_MESSAGE));
-        registerReceiver(channelReceiver, new IntentFilter(Broadcast.CONVERSATION_NEW));
-        registerReceiver(channelReceiver, new IntentFilter(Broadcast.CONVERSATION_REMOVE));
-        registerReceiver(channelReceiver, new IntentFilter(Broadcast.CONVERSATION_TOPIC));
+        LocalBroadcastManager.getInstance(this).registerReceiver(channelReceiver, new IntentFilter(Broadcast.CONVERSATION_MESSAGE));
+        LocalBroadcastManager.getInstance(this).registerReceiver(channelReceiver, new IntentFilter(Broadcast.CONVERSATION_NEW));
+        LocalBroadcastManager.getInstance(this).registerReceiver(channelReceiver, new IntentFilter(Broadcast.CONVERSATION_REMOVE));
+        LocalBroadcastManager.getInstance(this).registerReceiver(channelReceiver, new IntentFilter(Broadcast.CONVERSATION_TOPIC));
 
         serverReceiver = new ServerReceiver(this);
-        registerReceiver(serverReceiver, new IntentFilter(Broadcast.SERVER_UPDATE));
+        LocalBroadcastManager.getInstance(this).registerReceiver(serverReceiver, new IntentFilter(Broadcast.SERVER_UPDATE));
 
         super.onResume();
 
@@ -380,8 +381,8 @@ public class ConversationActivity extends SherlockActivity implements ServiceCon
         }
 
         unbindService(this);
-        unregisterReceiver(channelReceiver);
-        unregisterReceiver(serverReceiver);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(channelReceiver);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(serverReceiver);
     }
 
     /**
@@ -715,11 +716,12 @@ public class ConversationActivity extends SherlockActivity implements ServiceCon
                                     server.addConversation(query);
 
                                     Intent intent = Broadcast.createConversationIntent(
-                                            Broadcast.CONVERSATION_NEW,
-                                            server.getId(),
-                                            nicknameWithoutPrefix
-                                            );
-                                    binder.getService().sendBroadcast(intent);
+                                        Broadcast.CONVERSATION_NEW,
+                                        server.getId(),
+                                        nicknameWithoutPrefix
+                                    );
+
+                                    LocalBroadcastManager.getInstance(binder.getService()).sendBroadcast(intent);
                                 }
                                 break;
                             case User.ACTION_OP:
