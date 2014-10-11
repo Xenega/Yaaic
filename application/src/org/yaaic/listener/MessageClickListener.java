@@ -20,11 +20,14 @@ along with Yaaic.  If not, see <http://www.gnu.org/licenses/>.
  */
 package org.yaaic.listener;
 
-import org.yaaic.activity.MessageActivity;
 import org.yaaic.adapter.MessageListAdapter;
-import org.yaaic.model.Extra;
+import org.yaaic.fragment.MessageDialogFragment;
 
-import android.content.Intent;
+import com.actionbarsherlock.app.SherlockDialogFragment;
+import com.actionbarsherlock.app.SherlockFragmentActivity;
+
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
@@ -66,9 +69,17 @@ public class MessageClickListener implements OnItemClickListener
     public void onItemClick(AdapterView<?> group, View view, int position, long id)
     {
         MessageListAdapter adapter = (MessageListAdapter) group.getAdapter();
+        SherlockFragmentActivity activity = (SherlockFragmentActivity) group.getContext();
 
-        Intent intent = new Intent(group.getContext(), MessageActivity.class);
-        intent.putExtra(Extra.MESSAGE, adapter.getItem(position).getText().toString());
-        group.getContext().startActivity(intent);
+        FragmentTransaction ft = activity.getSupportFragmentManager().beginTransaction();
+        Fragment prev = activity.getSupportFragmentManager().findFragmentByTag("dialog");
+        if (prev != null) {
+            ft.remove(prev);
+        }
+        ft.addToBackStack(null);
+
+        // Create and show the dialog.
+        SherlockDialogFragment newFragment = MessageDialogFragment.newInstance(adapter.getItem(position).getText());
+        newFragment.show(ft, "dialog");
     }
 }
