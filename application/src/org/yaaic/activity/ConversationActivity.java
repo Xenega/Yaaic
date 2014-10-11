@@ -278,13 +278,13 @@ public class ConversationActivity extends SherlockActivity implements ServiceCon
     {
         // register the receivers as early as possible, otherwise we may loose a broadcast message
         channelReceiver = new ConversationReceiver(server.getId(), this);
-        registerReceiver(channelReceiver, new IntentFilter(Broadcast.CONVERSATION_MESSAGE));
-        registerReceiver(channelReceiver, new IntentFilter(Broadcast.CONVERSATION_NEW));
-        registerReceiver(channelReceiver, new IntentFilter(Broadcast.CONVERSATION_REMOVE));
-        registerReceiver(channelReceiver, new IntentFilter(Broadcast.CONVERSATION_TOPIC));
+        LocalBroadcastManager.getInstance(this).registerReceiver(channelReceiver, new IntentFilter(Broadcast.CONVERSATION_MESSAGE));
+        LocalBroadcastManager.getInstance(this).registerReceiver(channelReceiver, new IntentFilter(Broadcast.CONVERSATION_NEW));
+        LocalBroadcastManager.getInstance(this).registerReceiver(channelReceiver, new IntentFilter(Broadcast.CONVERSATION_REMOVE));
+        LocalBroadcastManager.getInstance(this).registerReceiver(channelReceiver, new IntentFilter(Broadcast.CONVERSATION_TOPIC));
 
         serverReceiver = new ServerReceiver(this);
-        registerReceiver(serverReceiver, new IntentFilter(Broadcast.SERVER_UPDATE));
+        LocalBroadcastManager.getInstance(this).registerReceiver(serverReceiver, new IntentFilter(Broadcast.SERVER_UPDATE));
 
         super.onResume();
 
@@ -381,8 +381,8 @@ public class ConversationActivity extends SherlockActivity implements ServiceCon
         }
 
         unbindService(this);
-        unregisterReceiver(channelReceiver);
-        unregisterReceiver(serverReceiver);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(channelReceiver);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(serverReceiver);
     }
 
     /**

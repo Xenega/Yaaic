@@ -43,6 +43,7 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.v4.content.LocalBroadcastManager;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
@@ -122,7 +123,7 @@ public class ServersActivity extends SherlockActivity implements ServiceConnecti
         bindService(intent, this, 0);
 
         receiver = new ServerReceiver(this);
-        registerReceiver(receiver, new IntentFilter(Broadcast.SERVER_UPDATE));
+        LocalBroadcastManager.getInstance(this).registerReceiver(receiver, new IntentFilter(Broadcast.SERVER_UPDATE));
 
         adapter.loadServers();
     }
@@ -140,7 +141,7 @@ public class ServersActivity extends SherlockActivity implements ServiceConnecti
         }
 
         unbindService(this);
-        unregisterReceiver(receiver);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(receiver);
     }
 
     /**
