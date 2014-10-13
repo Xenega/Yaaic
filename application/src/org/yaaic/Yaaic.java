@@ -59,8 +59,11 @@ public class Yaaic
     {
         if (!serversLoaded) {
             Database db = new Database(context);
-            servers = db.getServers();
-            db.close();
+            try {
+                servers = db.getServers();
+            } finally {
+                db.close();
+            }
 
             // LocalBroadcastManager.getInstance(context).sendBroadcast(new Intent(Broadcast.SERVER_UPDATE));
             serversLoaded = true;

@@ -326,8 +326,11 @@ public class ServersActivity extends SherlockActivity implements ServiceConnecti
     public void deleteServer(int serverId)
     {
         Database db = new Database(this);
-        db.removeServerById(serverId);
-        db.close();
+        try {
+            db.removeServerById(serverId);
+        } finally {
+            db.close();
+        }
 
         Yaaic.getInstance().removeServerById(serverId);
         adapter.loadServers();

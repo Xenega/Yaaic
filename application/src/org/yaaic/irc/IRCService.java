@@ -113,8 +113,11 @@ public class IRCService extends Service
 
         // Load servers from Database
         Database db = new Database(this);
-        Yaaic.getInstance().setServers(db.getServers());
-        db.close();
+        try {
+            Yaaic.getInstance().setServers(db.getServers());
+        } finally {
+            db.close();
+        }
 
         // Broadcast changed server list
         LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(Broadcast.SERVER_UPDATE));

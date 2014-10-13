@@ -292,25 +292,32 @@ public class AddServerActivity extends SherlockActivity implements OnClickListen
      */
     private void addServer()
     {
-        Database db = new Database(this);
-
-        Identity identity = getIdentityFromView();
-        long identityId = db.addIdentity(
-            identity.getNickname(),
-            identity.getIdent(),
-            identity.getRealName(),
-            identity.getAliases()
-            );
-
         Server server = getServerFromView();
         server.setAuthentication(authentication);
+        Identity identity = getIdentityFromView();
 
-        long serverId = db.addServer(server, (int) identityId);
+        long serverId;
+        Database db = new Database(this);
+        try {
+            db.beginTransition();
 
-        db.setChannels((int) serverId, channels);
-        db.setCommands((int) serverId, commands);
+            long identityId = db.addIdentity(
+                    identity.getNickname(),
+                    identity.getIdent(),
+                    identity.getRealName(),
+                    identity.getAliases()
+                    );
 
-        db.close();
+            serverId = db.addServer(server, (int) identityId);
+
+            db.setChannels((int) serverId, channels);
+            db.setCommands((int) serverId, commands);
+
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransition();
+            db.close();
+        }
 
         server.setId((int) serverId);
         server.setIdentity(identity);
@@ -325,28 +332,35 @@ public class AddServerActivity extends SherlockActivity implements OnClickListen
      */
     private void updateServer()
     {
-        Database db = new Database(this);
-
-        int serverId = this.server.getId();
-        int identityId = db.getIdentityIdByServerId(serverId);
-
         Server server = getServerFromView();
         server.setAuthentication(authentication);
-        db.updateServer(serverId, server, identityId);
-
         Identity identity = getIdentityFromView();
-        db.updateIdentity(
-            identityId,
-            identity.getNickname(),
-            identity.getIdent(),
-            identity.getRealName(),
-            identity.getAliases()
+
+        Database db = new Database(this);
+        try {
+            db.beginTransition();
+
+            int serverId = this.server.getId();
+            int identityId = db.getIdentityIdByServerId(serverId);
+
+            db.updateServer(serverId, server, identityId);
+
+            db.updateIdentity(
+                identityId,
+                identity.getNickname(),
+                identity.getIdent(),
+                identity.getRealName(),
+                identity.getAliases()
             );
 
-        db.setChannels(serverId, channels);
-        db.setCommands(serverId, commands);
+            db.setChannels(serverId, channels);
+            db.setCommands(serverId, commands);
 
-        db.close();
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransition();
+            db.close();
+        }
 
         server.setId(this.server.getId());
         server.setIdentity(identity);

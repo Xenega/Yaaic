@@ -693,4 +693,19 @@ public class Database extends SQLiteOpenHelper
 
         return identityId;
     }
+
+    public void beginTransition()
+    {
+        this.getWritableDatabase().beginTransaction();
+    }
+
+    public void setTransactionSuccessful()
+    {
+        this.getWritableDatabase().setTransactionSuccessful();
+    }
+
+    public void endTransition()
+    {
+        this.getWritableDatabase().endTransaction();
+    }
 }
