@@ -100,6 +100,16 @@ public class ConversationPagerAdapter extends PagerAdapter implements Conversati
     }
 
     /**
+     * Clear the history of the conversation at the given position from the adapter.
+     *
+     * @param position
+     */
+    public void clearConversation(int position) {
+        ConversationInfo convInfo = conversations.get(position);
+        convInfo.adapter.udpate(convInfo.conv);
+    }
+
+    /**
      * Get position of given item.
      */
     @Override

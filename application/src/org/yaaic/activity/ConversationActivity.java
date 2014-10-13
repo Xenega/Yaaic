@@ -281,6 +281,7 @@ public class ConversationActivity extends SherlockActivity implements ServiceCon
         LocalBroadcastManager.getInstance(this).registerReceiver(channelReceiver, new IntentFilter(Broadcast.CONVERSATION_MESSAGE));
         LocalBroadcastManager.getInstance(this).registerReceiver(channelReceiver, new IntentFilter(Broadcast.CONVERSATION_NEW));
         LocalBroadcastManager.getInstance(this).registerReceiver(channelReceiver, new IntentFilter(Broadcast.CONVERSATION_REMOVE));
+        LocalBroadcastManager.getInstance(this).registerReceiver(channelReceiver, new IntentFilter(Broadcast.CONVERSATION_CLEAR));
         LocalBroadcastManager.getInstance(this).registerReceiver(channelReceiver, new IntentFilter(Broadcast.CONVERSATION_TOPIC));
 
         serverReceiver = new ServerReceiver(this);
@@ -566,6 +567,15 @@ public class ConversationActivity extends SherlockActivity implements ServiceCon
 
         if (position != -1) {
             pagerAdapter.removeConversation(position);
+        }
+    }
+
+    @Override
+    public void onClearConversation(String target) {
+        int position = pagerAdapter.getPositionByName(target);
+
+        if (position != -1) {
+            pagerAdapter.clearConversation(position);
         }
     }
 
