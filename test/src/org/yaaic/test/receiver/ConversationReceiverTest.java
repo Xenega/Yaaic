@@ -37,6 +37,7 @@ public class ConversationReceiverTest extends AndroidTestCase implements Convers
 	private boolean onConversationMessageCalled;
 	private boolean onNewConversationCalled;
 	private boolean onRemoveConversationCalled;
+	private boolean onClearConversationCalled;
 
 	private ConversationReceiver receiver;
 	private String testTarget = "#unittest";
@@ -47,6 +48,7 @@ public class ConversationReceiverTest extends AndroidTestCase implements Convers
 		onConversationMessageCalled = false;
 		onNewConversationCalled = false;
 		onRemoveConversationCalled = false;
+		onClearConversationCalled = false;
 
 		receiver = new ConversationReceiver(serverId, this);
 	}
@@ -59,6 +61,7 @@ public class ConversationReceiverTest extends AndroidTestCase implements Convers
 		assertTrue(onConversationMessageCalled);
 		assertFalse(onNewConversationCalled);
 		assertFalse(onRemoveConversationCalled);
+		assertFalse(onClearConversationCalled);
 	}
 
 	public void testNewBroadcast()
@@ -69,6 +72,7 @@ public class ConversationReceiverTest extends AndroidTestCase implements Convers
 		assertFalse(onConversationMessageCalled);
 		assertTrue(onNewConversationCalled);
 		assertFalse(onRemoveConversationCalled);
+		assertFalse(onClearConversationCalled);
 	}
 
 	public void testRemoveBroadcast()
@@ -79,6 +83,18 @@ public class ConversationReceiverTest extends AndroidTestCase implements Convers
 		assertFalse(onConversationMessageCalled);
 		assertFalse(onNewConversationCalled);
 		assertTrue(onRemoveConversationCalled);
+		assertFalse(onClearConversationCalled);
+	}
+
+	public void testClearBroadcast()
+	{
+		Intent intent = Broadcast.createConversationIntent(Broadcast.CONVERSATION_CLEAR, serverId, testTarget);
+		receiver.onReceive(getContext(), intent);
+
+		assertFalse(onConversationMessageCalled);
+		assertFalse(onNewConversationCalled);
+		assertFalse(onRemoveConversationCalled);
+		assertTrue(onClearConversationCalled);
 	}
 
 	@Override
@@ -109,5 +125,13 @@ public class ConversationReceiverTest extends AndroidTestCase implements Convers
 	public void onTopicChanged(String topic)
 	{
 		// XXX: Implement me!
+	}
+
+	@Override
+	public void onClearConversation(String target)
+	{
+		assertEquals(testTarget, target);
+		
+		onClearConversationCalled = true;
 	}
 }
