@@ -91,6 +91,8 @@ public class AddServerActivity extends ActionBarActivity implements OnClickListe
         channels = new ArrayList<String>();
         commands = new ArrayList<String>();
 
+        findViewById(R.id.actionbar_discard).setOnClickListener(cancelOnClick);
+        findViewById(R.id.actionbar_done).setOnClickListener(saveOnClick);
         findViewById(R.id.aliases).setOnClickListener(this);
         findViewById(R.id.channels).setOnClickListener(this);
         findViewById(R.id.commands).setOnClickListener(this);
@@ -227,29 +229,33 @@ public class AddServerActivity extends ActionBarActivity implements OnClickListe
         }
     }
 
-    public void onCancel(View view) {
-        setResult(RESULT_CANCELED);
-        finish();
-    }
+    public View.OnClickListener cancelOnClick = new View.OnClickListener() {
+        public void onClick(View v) {
+            setResult(RESULT_CANCELED);
+            finish();
+        }
+    };
 
     /**
      * Try to save server.
      */
-    public void onSave(View view) {
-        try {
-            validateServer();
-            validateIdentity();
-            if (server == null) {
-                addServer();
-            } else {
-                updateServer();
+    public View.OnClickListener saveOnClick = new View.OnClickListener() {
+        public void onClick(View v) {
+            try {
+                validateServer();
+                validateIdentity();
+                if (server == null) {
+                    addServer();
+                } else {
+                    updateServer();
+                }
+                setResult(RESULT_OK);
+                finish();
+            } catch(ValidationException e) {
+                Toast.makeText(AddServerActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
             }
-            setResult(RESULT_OK);
-            finish();
-        } catch(ValidationException e) {
-            Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
         }
-    }
+    };
 
     /**
      * Add server to database
