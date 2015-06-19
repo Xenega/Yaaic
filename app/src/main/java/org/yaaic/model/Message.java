@@ -80,7 +80,6 @@ public class Message
 
     private final String text;
     private final String sender;
-    private SpannableString canvas;
     private long timestamp;
 
     private int color = NO_COLOR;
@@ -224,55 +223,53 @@ public class Message
     {
         Settings settings = new Settings(context);
 
-        if (canvas == null) {
-            String prefix    = hasIcon() && settings.showIcons() ? "  " : "";
-            String nick      = hasSender() ? "<" + sender + "> " : "";
-            String timestamp = settings.showTimestamp() ? renderTimeStamp(settings.use24hFormat(), settings.includeSeconds()) : "";
+        String prefix    = hasIcon() && settings.showIcons() ? "  " : "";
+        String nick      = hasSender() ? "<" + sender + "> " : "";
+        String timestamp = settings.showTimestamp() ? renderTimeStamp(settings.use24hFormat(), settings.includeSeconds()) : "";
 
-            canvas = new SpannableString(prefix + timestamp + nick);
-            SpannableString renderedText;
+        SpannableString canvas = new SpannableString(prefix + timestamp + nick);
+        SpannableString renderedText;
 
-            if (settings.showMircColors()) {
-                renderedText = MircColors.toSpannable(text);
-            } else {
-                renderedText = new SpannableString(
-                    MircColors.removeStyleAndColors(text)
-                );
+        if (settings.showMircColors()) {
+            renderedText = MircColors.toSpannable(text);
+        } else {
+            renderedText = new SpannableString(
+                MircColors.removeStyleAndColors(text)
+            );
+        }
+
+        if (settings.showGraphicalSmilies()) {
+            renderedText = Smilies.toSpannable(renderedText, context);
+        }
+
+        canvas = new SpannableString(TextUtils.concat(canvas, renderedText));
+
+        if (hasSender()) {
+            int start = (prefix + timestamp).length() + 1;
+            int end = start + sender.length();
+
+            if (settings.showColorsNick()) {
+                canvas.setSpan(new ForegroundColorSpan(getSenderColor()), start, end , Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+        }
+
+        if (hasIcon() && settings.showIcons()) {
+            Drawable drawable = context.getResources().getDrawable(icon);
+            drawable.setBounds(0, 0, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
+            canvas.setSpan(new ImageSpan(drawable, ImageSpan.ALIGN_BOTTOM), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
+
+        if (hasColor() && settings.showColors()) {
+            // Only apply the foreground color to areas that don't already have a foreground color.
+            ForegroundColorSpan[] spans = canvas.getSpans(0, canvas.length(), ForegroundColorSpan.class);
+            int start = 0;
+
+            for (int i = 0; i < spans.length; i++) {
+                canvas.setSpan(new ForegroundColorSpan(color), start, canvas.getSpanStart(spans[i]), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                start = canvas.getSpanEnd(spans[i]);
             }
 
-            if (settings.showGraphicalSmilies()) {
-                renderedText = Smilies.toSpannable(renderedText, context);
-            }
-
-            canvas = new SpannableString(TextUtils.concat(canvas, renderedText));
-
-            if (hasSender()) {
-                int start = (prefix + timestamp).length() + 1;
-                int end = start + sender.length();
-
-                if (settings.showColorsNick()) {
-                    canvas.setSpan(new ForegroundColorSpan(getSenderColor()), start, end , Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                }
-            }
-
-            if (hasIcon() && settings.showIcons()) {
-                Drawable drawable = context.getResources().getDrawable(icon);
-                drawable.setBounds(0, 0, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
-                canvas.setSpan(new ImageSpan(drawable, ImageSpan.ALIGN_BOTTOM), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            }
-
-            if (hasColor() && settings.showColors()) {
-                // Only apply the foreground color to areas that don't already have a foreground color.
-                ForegroundColorSpan[] spans = canvas.getSpans(0, canvas.length(), ForegroundColorSpan.class);
-                int start = 0;
-
-                for (int i = 0; i < spans.length; i++) {
-                    canvas.setSpan(new ForegroundColorSpan(color), start, canvas.getSpanStart(spans[i]), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    start = canvas.getSpanEnd(spans[i]);
-                }
-
-                canvas.setSpan(new ForegroundColorSpan(color), start, canvas.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            }
+            canvas.setSpan(new ForegroundColorSpan(color), start, canvas.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
 
         return canvas;

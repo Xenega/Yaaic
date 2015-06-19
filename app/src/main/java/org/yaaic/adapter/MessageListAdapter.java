@@ -24,6 +24,7 @@ import java.util.LinkedList;
 
 import org.yaaic.model.Conversation;
 import org.yaaic.model.Message;
+import org.yaaic.utils.MessageCache;
 
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -174,7 +175,7 @@ public class MessageListAdapter extends BaseAdapter
         canvas.setLinksClickable(true);
         canvas.setLinkTextColor(Message.COLOR_BLUE);
 
-        canvas.setText(message.render(context));
+        canvas.setText(MessageCache.getCache(context).get(message));
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
             setupViewForHoneycombAndLater(canvas);
