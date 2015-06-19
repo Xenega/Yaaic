@@ -25,18 +25,13 @@ import java.util.Date;
 import org.yaaic.utils.MircColors;
 import org.yaaic.utils.Smilies;
 
-import android.annotation.TargetApi;
 import android.content.Context;
-import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.ImageSpan;
-import android.text.util.Linkify;
-import android.widget.TextView;
 
 /**
  * A channel or server message
@@ -311,34 +306,6 @@ public class Message
     private boolean hasIcon()
     {
         return icon != NO_ICON;
-    }
-
-    /**
-     * Render message as text view
-     *
-     * @param context
-     * @return
-     */
-    public TextView renderTextView(Context context)
-    {
-        TextView canvas = new TextView(context);
-
-        canvas.setAutoLinkMask(Linkify.ALL);
-        canvas.setLinksClickable(true);
-        canvas.setLinkTextColor(COLOR_BLUE);
-
-        canvas.setText(this.render(context));
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-            setupViewForHoneycombAndLater(canvas);
-        }
-
-        return canvas;
-    }
-
-    @TargetApi(11)
-    private void setupViewForHoneycombAndLater(TextView canvas) {
-        canvas.setTextIsSelectable(true);
     }
 
     /**
