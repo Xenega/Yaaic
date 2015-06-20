@@ -32,6 +32,7 @@ import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.ImageSpan;
+import android.text.util.Linkify;
 
 /**
  * A channel or server message
@@ -271,6 +272,8 @@ public class Message
 
             canvas.setSpan(new ForegroundColorSpan(color), start, canvas.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
+
+        Linkify.addLinks(canvas, Linkify.ALL);
 
         return canvas;
     }

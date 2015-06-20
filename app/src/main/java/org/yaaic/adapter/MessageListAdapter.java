@@ -171,7 +171,6 @@ public class MessageListAdapter extends BaseAdapter
             canvas = new TextView(context);
         }
 
-        canvas.setAutoLinkMask(Linkify.ALL);
         canvas.setLinksClickable(true);
         canvas.setLinkTextColor(Message.COLOR_BLUE);
 
