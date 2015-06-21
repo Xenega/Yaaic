@@ -40,6 +40,7 @@ import org.yaaic.R;
  */
 public class Settings
 {
+    private final Context context;
     private final SharedPreferences preferences;
     private final Resources resources;
 
@@ -50,8 +51,17 @@ public class Settings
      */
     public Settings(Context context)
     {
-        this.preferences = PreferenceManager.getDefaultSharedPreferences(context);
-        this.resources = context.getApplicationContext().getResources();
+        this.context = context.getApplicationContext();
+        this.preferences = PreferenceManager.getDefaultSharedPreferences(this.context);
+        this.resources = this.context.getResources();
+    }
+
+    public Context getContext() {
+        return context;
+    }
+
+    public Resources getResources() {
+        return resources;
     }
 
     /**

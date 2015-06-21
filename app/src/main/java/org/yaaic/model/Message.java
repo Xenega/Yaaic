@@ -27,6 +27,7 @@ import org.yaaic.utils.Smilies;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;
+import android.support.v4.content.ContextCompat;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.TextUtils;
@@ -220,10 +221,8 @@ public class Message
      *
      * @return
      */
-    public SpannableString render(Context context)
+    public SpannableString render(Settings settings)
     {
-        Settings settings = new Settings(context);
-
         String prefix    = hasIcon() && settings.showIcons() ? "  " : "";
         String nick      = hasSender() ? "<" + sender + "> " : "";
         String timestamp = settings.showTimestamp() ? renderTimeStamp(settings.use24hFormat(), settings.includeSeconds()) : "";
@@ -240,7 +239,7 @@ public class Message
         }
 
         if (settings.showGraphicalSmilies()) {
-            renderedText = Smilies.toSpannable(renderedText, context);
+            renderedText = Smilies.toSpannable(renderedText, settings.getContext());
         }
 
         canvas = new SpannableString(TextUtils.concat(canvas, renderedText));
@@ -255,7 +254,7 @@ public class Message
         }
 
         if (hasIcon() && settings.showIcons()) {
-            Drawable drawable = context.getResources().getDrawable(icon);
+            Drawable drawable = ContextCompat.getDrawable(settings.getContext(), icon);
             drawable.setBounds(0, 0, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
             canvas.setSpan(new ImageSpan(drawable, ImageSpan.ALIGN_BOTTOM), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         }

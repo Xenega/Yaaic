@@ -7,6 +7,7 @@ import android.support.v4.util.LruCache;
 import android.text.SpannableString;
 
 import org.yaaic.model.Message;
+import org.yaaic.model.Settings;
 
 import java.util.Locale;
 
@@ -26,17 +27,19 @@ public class MessageCache extends LruCache<Message, SpannableString> implements 
     public static int CACHE_SIZE = 500;
 
     private final Context context;
+    private final Settings settings;
     private Locale locale;
 
     private MessageCache(Context context) {
         super(CACHE_SIZE);
         this.context = context.getApplicationContext();
         this.context.registerComponentCallbacks(this);
+        this.settings = new Settings(this.context);
         this.locale = context.getResources().getConfiguration().locale;
     }
 
     protected SpannableString create(Message message) {
-        return message.render(context);
+        return message.render(settings);
     }
 
     @Override
