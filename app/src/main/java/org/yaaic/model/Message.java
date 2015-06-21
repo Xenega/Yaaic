@@ -30,6 +30,7 @@ import android.graphics.drawable.Drawable;
 import android.support.v4.content.ContextCompat;
 import android.text.Spannable;
 import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.ImageSpan;
@@ -223,41 +224,47 @@ public class Message
      */
     public SpannableString render(Settings settings)
     {
-        String prefix    = hasIcon() && settings.showIcons() ? "  " : "";
-        String nick      = hasSender() ? "<" + sender + "> " : "";
-        String timestamp = settings.showTimestamp() ? renderTimeStamp(settings.use24hFormat(), settings.includeSeconds()) : "";
+        SpannableStringBuilder canvas = new SpannableStringBuilder();
 
-        SpannableString canvas = new SpannableString(prefix + timestamp + nick);
-        SpannableString renderedText;
-
-        if (settings.showMircColors()) {
-            renderedText = MircColors.toSpannable(text);
-        } else {
-            renderedText = new SpannableString(
-                MircColors.removeStyleAndColors(text)
-            );
-        }
-
-        if (settings.showGraphicalSmilies()) {
-            renderedText = Smilies.toSpannable(renderedText, settings.getContext());
-        }
-
-        canvas = new SpannableString(TextUtils.concat(canvas, renderedText));
-
-        if (hasSender()) {
-            int start = (prefix + timestamp).length() + 1;
-            int end = start + sender.length();
-
-            if (settings.showColorsNick()) {
-                canvas.setSpan(new ForegroundColorSpan(getSenderColor()), start, end , Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            }
-        }
+        int size = canvas.length();
 
         if (hasIcon() && settings.showIcons()) {
+            canvas.append(" ");
+
             Drawable drawable = ContextCompat.getDrawable(settings.getContext(), icon);
             drawable.setBounds(0, 0, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
             canvas.setSpan(new ImageSpan(drawable, ImageSpan.ALIGN_BOTTOM), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
+
+        if (settings.showTimestamp()) {
+            canvas.append(renderTimeStamp(settings.use24hFormat(), settings.includeSeconds()));
+        }
+
+        int senderStart = (canvas.length() - size) + 1;
+
+        if (hasSender()) {
+            canvas.append("<").append(sender).append("> ");
+
+            int end = senderStart + sender.length();
+
+            if (settings.showColorsNick()) {
+                canvas.setSpan(new ForegroundColorSpan(getSenderColor()), senderStart, end , Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+        }
+
+        SpannableStringBuilder renderedText = new SpannableStringBuilder(text);
+
+        if (settings.showMircColors()) {
+            MircColors.setSpan(renderedText);
+        } else {
+            MircColors.removeStyleAndColors(renderedText);
+        }
+
+        if (settings.showGraphicalSmilies()) {
+            Smilies.setSpan(renderedText, settings.getContext());
+        }
+
+        canvas.append(renderedText);
 
         if (hasColor() && settings.showColors()) {
             // Only apply the foreground color to areas that don't already have a foreground color.
@@ -274,7 +281,7 @@ public class Message
 
         Linkify.addLinks(canvas, Linkify.ALL);
 
-        return canvas;
+        return new SpannableString(canvas);
     }
 
     /**

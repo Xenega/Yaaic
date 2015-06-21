@@ -33,6 +33,7 @@ import android.graphics.drawable.Drawable;
 import android.support.v4.content.ContextCompat;
 import android.text.Spannable;
 import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
 import android.text.style.ImageSpan;
 
 /**
@@ -106,10 +107,9 @@ public abstract class Smilies
     /**
      * Converts all smilies in a string to graphical smilies.
      *
-     * @param text  A string with smilies.
-     * @return      A SpannableString with graphical smilies.
+     * @param text  A Spannable with smilies.
      */
-    public static SpannableString toSpannable(SpannableString text, Context context)
+    public static void setSpan(Spannable text, Context context)
     {
         Matcher m = smiliesPattern.matcher(text);
 
@@ -119,7 +119,17 @@ public abstract class Smilies
             ImageSpan span = new ImageSpan(smilie, ImageSpan.ALIGN_BOTTOM);
             text.setSpan(span, m.start(), m.end(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
+    }
 
+    /**
+     * Converts all smilies in a string to graphical smilies.
+     *
+     * @param text  A Spannable with smilies.
+     * @return      A Spannable with graphical smilies.
+     */
+    public static Spannable toSpannable(Spannable text, Context context)
+    {
+        setSpan(text, context);
         return text;
     }
 
@@ -127,9 +137,9 @@ public abstract class Smilies
      * Converts all smilies in a string to graphical smilies.
      *
      * @param text  A string with smilies.
-     * @return      A SpannableString with graphical smilies.
+     * @return      A Spannable with graphical smilies.
      */
-    public static SpannableString toSpannable(String text, Context context)
+    public static Spannable toSpannable(String text, Context context)
     {
         return toSpannable(new SpannableString(text), context);
     }

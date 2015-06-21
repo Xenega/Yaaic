@@ -56,10 +56,20 @@ public class Settings
         this.resources = this.context.getResources();
     }
 
+    /**
+     * Get the application context.
+     *
+     * @return The application context.
+     */
     public Context getContext() {
         return context;
     }
 
+    /**
+     * Get the application resources.
+     *
+     * @return The application resources.
+     */
     public Resources getResources() {
         return resources;
     }
