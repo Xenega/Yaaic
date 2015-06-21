@@ -20,7 +20,9 @@ along with Yaaic.  If not, see <http://www.gnu.org/licenses/>.
  */
 package org.yaaic.utils;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,10 +30,11 @@ import org.yaaic.R;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;
+import android.support.v4.content.ContextCompat;
 import android.text.Spannable;
 import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
 import android.text.style.ImageSpan;
-import android.util.Log;
 
 /**
  * Class for handling graphical smilies in text messages.
@@ -40,16 +43,15 @@ import android.util.Log;
  */
 public abstract class Smilies
 {
-    private static final HashMap<String, Integer> mappings = new HashMap<String, Integer>();
+    private static final LinkedHashMap<String, Integer> mappings;
 
-    /**
-     * Converts all smilies in a string to graphical smilies.
-     *
-     * @param text  A string with smilies.
-     * @return      A SpannableString with graphical smilies.
+    private static final Pattern smiliesPattern;
+
+    /*
+     * Pre-compile the pattern to find smilies
      */
-    public static SpannableString toSpannable(SpannableString text, Context context)
-    {
+    static {
+        mappings = new LinkedHashMap<>(); // LinkedHashMap, keep the order
         mappings.put(">:o", R.drawable.smiley_yell);
         mappings.put(">:-o", R.drawable.smiley_yell);
         mappings.put("O:)", R.drawable.smiley_innocent);
@@ -92,27 +94,42 @@ public abstract class Smilies
         mappings.put("O_o", R.drawable.smiley_wtf);
 
         StringBuilder regex = new StringBuilder("(");
-        String[] smilies = mappings.keySet().toArray(new String[mappings.size()]);
 
-        for (int i = 0; i < smilies.length; i++) {
-            regex.append(Pattern.quote(smilies[i]));
+        for (Entry<String, Integer> smilie : mappings.entrySet()) {
+            regex.append(Pattern.quote(smilie.getKey()));
             regex.append("|");
         }
 
-        regex.deleteCharAt(regex.length()-1);
-        regex.append(")");
-        Pattern smiliematcher = Pattern.compile(regex.toString());
-        Matcher m = smiliematcher.matcher(text);
+        regex.replace(regex.length() - 1, regex.length(), ")");
+        smiliesPattern = Pattern.compile(regex.toString());
+    }
+
+    /**
+     * Converts all smilies in a string to graphical smilies.
+     *
+     * @param text  A Spannable with smilies.
+     */
+    public static void setSpan(Spannable text, Context context)
+    {
+        Matcher m = smiliesPattern.matcher(text);
 
         while (m.find()) {
-            Log.d("Smilies", "SID: "+mappings.get(m.group(1)).intValue());
-            Log.d("Smilies", "OID: "+R.drawable.smiley_smile);
-            Drawable smilie = context.getResources().getDrawable(mappings.get(m.group(1)).intValue());
+            Drawable smilie = ContextCompat.getDrawable(context, mappings.get(m.group(1)));
             smilie.setBounds(0, 0, smilie.getIntrinsicWidth(), smilie.getIntrinsicHeight());
             ImageSpan span = new ImageSpan(smilie, ImageSpan.ALIGN_BOTTOM);
             text.setSpan(span, m.start(), m.end(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
+    }
 
+    /**
+     * Converts all smilies in a string to graphical smilies.
+     *
+     * @param text  A Spannable with smilies.
+     * @return      A Spannable with graphical smilies.
+     */
+    public static Spannable toSpannable(Spannable text, Context context)
+    {
+        setSpan(text, context);
         return text;
     }
 
@@ -120,9 +137,9 @@ public abstract class Smilies
      * Converts all smilies in a string to graphical smilies.
      *
      * @param text  A string with smilies.
-     * @return      A SpannableString with graphical smilies.
+     * @return      A Spannable with graphical smilies.
      */
-    public static SpannableString toSpannable(String text, Context context)
+    public static Spannable toSpannable(String text, Context context)
     {
         return toSpannable(new SpannableString(text), context);
     }

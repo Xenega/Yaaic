@@ -74,12 +74,10 @@ public abstract class MircColors
      * Converts a string with mIRC style and color codes to a SpannableString with
      * all the style and color codes applied.
      * 
-     * @param text  A string with mIRC color codes.
-     * @return      A SpannableString with all the styles applied.
+     * @param ssb   A SpannableStringBuilder with mIRC color codes.
      */
-    public static SpannableString toSpannable(SpannableString text)
+    public static void setSpan(SpannableStringBuilder ssb)
     {
-        SpannableStringBuilder ssb = new SpannableStringBuilder(text);
         replaceControlCodes(boldPattern.matcher(ssb), ssb, new StyleSpan(Typeface.BOLD));
         replaceControlCodes(underlinePattern.matcher(ssb), ssb, new UnderlineSpan());
         replaceControlCodes(italicPattern.matcher(ssb), ssb, new StyleSpan(Typeface.ITALIC));
@@ -120,8 +118,23 @@ public abstract class MircColors
             // Reset the matcher with the modified text so that the ending color code character can be matched again.
             m.reset(ssb);
         }
+
         // Remove left over codes
-        return new SpannableString(removeStyleAndColors(ssb));
+        removeStyleAndColors(ssb);
+    }
+
+    /**
+     * Converts a string with mIRC style and color codes to a SpannableString with
+     * all the style and color codes applied.
+     *
+     * @param text  A SpannableString with mIRC color codes.
+     * @return      A Spannable with all the styles applied.
+     */
+    public static Spannable toSpannable(Spannable text)
+    {
+        SpannableStringBuilder ssb = new SpannableStringBuilder(text);
+        setSpan(ssb);
+        return ssb;
     }
 
     /**
@@ -129,9 +142,9 @@ public abstract class MircColors
      * all the style and color codes applied.
      * 
      * @param text  A string with mIRC color codes.
-     * @return      A SpannableString with all the styles applied.
+     * @return      A Spannable with all the styles applied.
      */
-    public static SpannableString toSpannable(String text)
+    public static Spannable toSpannable(String text)
     {
         return toSpannable(new SpannableString(text));
     }

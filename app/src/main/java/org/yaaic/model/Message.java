@@ -25,18 +25,16 @@ import java.util.Date;
 import org.yaaic.utils.MircColors;
 import org.yaaic.utils.Smilies;
 
-import android.annotation.TargetApi;
 import android.content.Context;
-import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
-import android.os.Build;
+import android.support.v4.content.ContextCompat;
 import android.text.Spannable;
 import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.ImageSpan;
 import android.text.util.Linkify;
-import android.widget.TextView;
 
 /**
  * A channel or server message
@@ -85,7 +83,6 @@ public class Message
 
     private final String text;
     private final String sender;
-    private SpannableString canvas;
     private long timestamp;
 
     private int color = NO_COLOR;
@@ -225,62 +222,66 @@ public class Message
      *
      * @return
      */
-    public SpannableString render(Context context)
+    public SpannableString render(Settings settings)
     {
-        Settings settings = new Settings(context);
+        SpannableStringBuilder canvas = new SpannableStringBuilder();
 
-        if (canvas == null) {
-            String prefix    = hasIcon() && settings.showIcons() ? "  " : "";
-            String nick      = hasSender() ? "<" + sender + "> " : "";
-            String timestamp = settings.showTimestamp() ? renderTimeStamp(settings.use24hFormat(), settings.includeSeconds()) : "";
+        int size = canvas.length();
 
-            canvas = new SpannableString(prefix + timestamp + nick);
-            SpannableString renderedText;
+        if (hasIcon() && settings.showIcons()) {
+            canvas.append(" ");
 
-            if (settings.showMircColors()) {
-                renderedText = MircColors.toSpannable(text);
-            } else {
-                renderedText = new SpannableString(
-                    MircColors.removeStyleAndColors(text)
-                );
-            }
+            Drawable drawable = ContextCompat.getDrawable(settings.getContext(), icon);
+            drawable.setBounds(0, 0, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
+            canvas.setSpan(new ImageSpan(drawable, ImageSpan.ALIGN_BOTTOM), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
 
-            if (settings.showGraphicalSmilies()) {
-                renderedText = Smilies.toSpannable(renderedText, context);
-            }
+        if (settings.showTimestamp()) {
+            canvas.append(renderTimeStamp(settings.use24hFormat(), settings.includeSeconds()));
+        }
 
-            canvas = new SpannableString(TextUtils.concat(canvas, renderedText));
+        int senderStart = (canvas.length() - size) + 1;
 
-            if (hasSender()) {
-                int start = (prefix + timestamp).length() + 1;
-                int end = start + sender.length();
+        if (hasSender()) {
+            canvas.append("<").append(sender).append("> ");
 
-                if (settings.showColorsNick()) {
-                    canvas.setSpan(new ForegroundColorSpan(getSenderColor()), start, end , Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                }
-            }
+            int end = senderStart + sender.length();
 
-            if (hasIcon() && settings.showIcons()) {
-                Drawable drawable = context.getResources().getDrawable(icon);
-                drawable.setBounds(0, 0, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
-                canvas.setSpan(new ImageSpan(drawable, ImageSpan.ALIGN_BOTTOM), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            }
-
-            if (hasColor() && settings.showColors()) {
-                // Only apply the foreground color to areas that don't already have a foreground color.
-                ForegroundColorSpan[] spans = canvas.getSpans(0, canvas.length(), ForegroundColorSpan.class);
-                int start = 0;
-
-                for (int i = 0; i < spans.length; i++) {
-                    canvas.setSpan(new ForegroundColorSpan(color), start, canvas.getSpanStart(spans[i]), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    start = canvas.getSpanEnd(spans[i]);
-                }
-
-                canvas.setSpan(new ForegroundColorSpan(color), start, canvas.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            if (settings.showColorsNick()) {
+                canvas.setSpan(new ForegroundColorSpan(getSenderColor()), senderStart, end , Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             }
         }
 
-        return canvas;
+        SpannableStringBuilder renderedText = new SpannableStringBuilder(text);
+
+        if (settings.showMircColors()) {
+            MircColors.setSpan(renderedText);
+        } else {
+            MircColors.removeStyleAndColors(renderedText);
+        }
+
+        if (settings.showGraphicalSmilies()) {
+            Smilies.setSpan(renderedText, settings.getContext());
+        }
+
+        canvas.append(renderedText);
+
+        if (hasColor() && settings.showColors()) {
+            // Only apply the foreground color to areas that don't already have a foreground color.
+            ForegroundColorSpan[] spans = canvas.getSpans(0, canvas.length(), ForegroundColorSpan.class);
+            int start = 0;
+
+            for (int i = 0; i < spans.length; i++) {
+                canvas.setSpan(new ForegroundColorSpan(color), start, canvas.getSpanStart(spans[i]), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                start = canvas.getSpanEnd(spans[i]);
+            }
+
+            canvas.setSpan(new ForegroundColorSpan(color), start, canvas.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
+
+        Linkify.addLinks(canvas, Linkify.ALL);
+
+        return new SpannableString(canvas);
     }
 
     /**
@@ -311,34 +312,6 @@ public class Message
     private boolean hasIcon()
     {
         return icon != NO_ICON;
-    }
-
-    /**
-     * Render message as text view
-     *
-     * @param context
-     * @return
-     */
-    public TextView renderTextView(Context context)
-    {
-        TextView canvas = new TextView(context);
-
-        canvas.setAutoLinkMask(Linkify.ALL);
-        canvas.setLinksClickable(true);
-        canvas.setLinkTextColor(COLOR_BLUE);
-
-        canvas.setText(this.render(context));
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-            setupViewForHoneycombAndLater(canvas);
-        }
-
-        return canvas;
-    }
-
-    @TargetApi(11)
-    private void setupViewForHoneycombAndLater(TextView canvas) {
-        canvas.setTextIsSelectable(true);
     }
 
     /**

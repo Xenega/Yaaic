@@ -24,9 +24,13 @@ import java.util.LinkedList;
 
 import org.yaaic.model.Conversation;
 import org.yaaic.model.Message;
+import org.yaaic.utils.MessageCache;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.database.DataSetObserver;
+import android.os.Build;
+import android.text.util.Linkify;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -39,7 +43,7 @@ import android.widget.TextView;
  */
 public class MessageListAdapter extends BaseAdapter
 {
-    private final LinkedList<TextView> messages;
+    private final LinkedList<Message> messages;
     private final Context context;
     private int historySize;
 
@@ -51,13 +55,13 @@ public class MessageListAdapter extends BaseAdapter
      */
     public MessageListAdapter(Conversation conversation, Context context)
     {
-        LinkedList<TextView> messages = new LinkedList<TextView>();
+        LinkedList<Message> messages = new LinkedList<>();
 
         // Render channel name as first message in channel
         if (conversation.getType() != Conversation.TYPE_SERVER) {
             Message header = new Message(conversation.getName());
             header.setColor(Message.COLOR_RED);
-            messages.add(header.renderTextView(context));
+            messages.add(header);
         }
 
         // Optimization - cache field lookups
@@ -65,7 +69,7 @@ public class MessageListAdapter extends BaseAdapter
         int mSize = mHistory.size();
 
         for (int i = 0; i < mSize; i++) {
-            messages.add(mHistory.get(i).renderTextView(context));
+            messages.add(mHistory.get(i));
         }
 
         // XXX: We don't want to clear the buffer, we want to add only
@@ -84,7 +88,7 @@ public class MessageListAdapter extends BaseAdapter
      */
     public void addMessage(Message message)
     {
-        messages.add(message.renderTextView(context));
+        messages.add(message);
 
         if (messages.size() > historySize) {
             messages.remove(0);
@@ -100,12 +104,11 @@ public class MessageListAdapter extends BaseAdapter
      */
     public void addBulkMessages(LinkedList<Message> messages)
     {
-        LinkedList<TextView> mMessages = this.messages;
-        Context mContext = this.context;
+        LinkedList<Message> mMessages = this.messages;
         int mSize = messages.size();
 
         for (int i = mSize - 1; i > -1; i--) {
-            mMessages.add(messages.get(i).renderTextView(mContext));
+            mMessages.add(messages.get(i));
 
             if (mMessages.size() > historySize) {
                 mMessages.remove(0);
@@ -133,7 +136,7 @@ public class MessageListAdapter extends BaseAdapter
      * @return
      */
     @Override
-    public TextView getItem(int position)
+    public Message getItem(int position)
     {
         return messages.get(position);
     }
@@ -161,7 +164,28 @@ public class MessageListAdapter extends BaseAdapter
     @Override
     public View getView(int position, View convertView, ViewGroup parent)
     {
-        return getItem(position);
+        Message message = getItem(position);
+        TextView canvas = (TextView)convertView;
+
+        if (convertView == null) {
+            canvas = new TextView(context);
+        }
+
+        canvas.setLinksClickable(true);
+        canvas.setLinkTextColor(Message.COLOR_BLUE);
+
+        canvas.setText(MessageCache.getCache(context).get(message));
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+            setupViewForHoneycombAndLater(canvas);
+        }
+
+        return canvas;
+    }
+
+    @TargetApi(11)
+    private void setupViewForHoneycombAndLater(TextView canvas) {
+        canvas.setTextIsSelectable(true);
     }
 
     /**
