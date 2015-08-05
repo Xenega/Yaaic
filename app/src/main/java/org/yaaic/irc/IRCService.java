@@ -21,8 +21,6 @@ along with Yaaic.  If not, see <http://www.gnu.org/licenses/>.
  */
 package org.yaaic.irc;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -69,13 +67,6 @@ public class IRCService extends Service
     private static final int NOTIFICATION_LED_ON_MS = 300;
     private static final int NOTIFICATION_LED_COLOR = 0xff00ff00;
 
-    @SuppressWarnings("rawtypes")
-    private static final Class[] mStartForegroundSignature = new Class[] { int.class, Notification.class };
-    @SuppressWarnings("rawtypes")
-    private static final Class[] mStopForegroundSignature = new Class[] { boolean.class };
-    @SuppressWarnings("rawtypes")
-    private static final Class[] mSetForegroudSignaure = new Class[] { boolean.class };
-
     private final IRCBinder binder;
     private final HashMap<Integer, IRCConnection> connections;
     private boolean foreground = false;
@@ -84,10 +75,6 @@ public class IRCService extends Service
     private int newMentions = 0;
 
     private NotificationManager notificationManager;
-    private Method mStartForeground;
-    private Method mStopForeground;
-    private final Object[] mStartForegroundArgs = new Object[2];
-    private final Object[] mStopForegroundArgs = new Object[1];
     private Notification notification;
     private Settings settings;
 
@@ -122,13 +109,6 @@ public class IRCService extends Service
         settings = new Settings(getBaseContext());
         notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
-        try {
-            mStartForeground = getClass().getMethod("startForeground", mStartForegroundSignature);
-            mStopForeground = getClass().getMethod("stopForeground", mStopForegroundSignature);
-        } catch (NoSuchMethodException e) {
-            // Running on an older platform.
-            mStartForeground = mStopForeground = null;
-        }
 
         // Broadcast changed server list
         sendBroadcast(new Intent(Broadcast.SERVER_UPDATE));
@@ -144,25 +124,6 @@ public class IRCService extends Service
         return settings;
     }
 
-    /**
-     * On start (will be called on pre-2.0 platform. On 2.0 or later onStartCommand()
-     * will be called)
-     */
-    @Override
-    public void onStart(Intent intent, int startId)
-    {
-        super.onStart(intent, startId);
-        handleCommand(intent);
-    }
-
-    /**
-     * On start command (Android >= 2.0)
-     *
-     * @param intent
-     * @param flags
-     * @param startId
-     * @return
-     */
     @Override
     public int onStartCommand(Intent intent, int flags, int startId)
     {
@@ -172,8 +133,7 @@ public class IRCService extends Service
 
         // We want this service to continue running until it is explicitly
         // stopped, so return sticky.
-        //return START_STICKY;
-        return 1;
+        return START_STICKY;
     }
 
 
@@ -201,9 +161,9 @@ public class IRCService extends Service
             // Set the info for the views that show in the notification panel.
             notification.setLatestEventInfo(this, getText(R.string.app_name), getText(R.string.notification_not_connected), contentIntent);
 
-            startForegroundCompat(FOREGROUND_NOTIFICATION, notification);
+            startForeground(FOREGROUND_NOTIFICATION, notification);
         } else if (ACTION_BACKGROUND.equals(intent.getAction()) && !foreground) {
-            stopForegroundCompat(FOREGROUND_NOTIFICATION);
+            stopForeground(true);
         } else if (ACTION_ACK_NEW_MENTIONS.equals(intent.getAction())) {
             ackNewMentions(intent.getIntExtra(EXTRA_ACK_SERVERID, -1), intent.getStringExtra(EXTRA_ACK_CONVTITLE));
         }
@@ -347,77 +307,6 @@ public class IRCService extends Service
     {
         connectedServerTitles.remove(title);
         updateNotification(getString(R.string.notification_disconnected, title), null, false, false, false);
-    }
-
-
-    /**
-     * This is a wrapper around the new startForeground method, using the older
-     * APIs if it is not available.
-     */
-    private void startForegroundCompat(int id, Notification notification)
-    {
-        // If we have the new startForeground API, then use it.
-        if (mStartForeground != null) {
-            mStartForegroundArgs[0] = Integer.valueOf(id);
-            mStartForegroundArgs[1] = notification;
-            try {
-                mStartForeground.invoke(this, mStartForegroundArgs);
-            } catch (InvocationTargetException e) {
-                // Should not happen.
-            } catch (IllegalAccessException e) {
-                // Should not happen.
-            }
-        } else {
-            // Fall back on the old API.
-            try {
-                Method setForeground = getClass().getMethod("setForeground", mSetForegroudSignaure);
-                setForeground.invoke(this, new Object[] { true });
-            } catch (NoSuchMethodException exception) {
-                // Should not happen
-            } catch (InvocationTargetException e) {
-                // Should not happen.
-            } catch (IllegalAccessException e) {
-                // Should not happen.
-            }
-
-            notificationManager.notify(id, notification);
-        }
-    }
-
-    /**
-     * This is a wrapper around the new stopForeground method, using the older
-     * APIs if it is not available.
-     */
-    public void stopForegroundCompat(int id)
-    {
-        foreground = false;
-
-        // If we have the new stopForeground API, then use it.
-        if (mStopForeground != null) {
-            mStopForegroundArgs[0] = Boolean.TRUE;
-            try {
-                mStopForeground.invoke(this, mStopForegroundArgs);
-            } catch (InvocationTargetException e) {
-                // Should not happen.
-            } catch (IllegalAccessException e) {
-                // Should not happen.
-            }
-        } else {
-            // Fall back on the old API.  Note to cancel BEFORE changing the
-            // foreground state, since we could be killed at that point.
-            notificationManager.cancel(id);
-
-            try {
-                Method setForeground = getClass().getMethod("setForeground", mSetForegroudSignaure);
-                setForeground.invoke(this, new Object[] { true });
-            } catch (NoSuchMethodException exception) {
-                // Should not happen
-            } catch (InvocationTargetException e) {
-                // Should not happen.
-            } catch (IllegalAccessException e) {
-                // Should not happen.
-            }
-        }
     }
 
     /**
@@ -592,7 +481,7 @@ public class IRCService extends Service
 
         if (shutDown) {
             foreground = false;
-            stopForegroundCompat(R.string.app_name);
+            stopForeground(true);
             stopSelf();
         }
     }
@@ -605,7 +494,7 @@ public class IRCService extends Service
     {
         // Make sure our notification is gone.
         if (foreground) {
-            stopForegroundCompat(R.string.app_name);
+            stopForeground(true);
         }
 
         AlarmManager am = (AlarmManager) getSystemService(ALARM_SERVICE);
