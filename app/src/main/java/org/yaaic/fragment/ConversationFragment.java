@@ -419,8 +419,25 @@ public class ConversationFragment extends Fragment implements ServerListener, Co
     }
 
     @Override
+    public void onPrepareOptionsMenu(Menu menu) {
+        super.onPrepareOptionsMenu(menu);
+
+        menu.findItem(R.id.connect).setVisible(server.isDisconnected());
+        menu.findItem(R.id.disconnect).setVisible(!server.isDisconnected());
+    }
+    
+    /**
+     * On menu item selected
+     */
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
+
+            case R.id.connect:
+               server.setStatus(Status.CONNECTING);
+               binder.connect(server);
+               break;
+
             case R.id.disconnect:
                 server.setStatus(Status.DISCONNECTED);
                 server.setMayReconnect(false);
@@ -560,7 +577,10 @@ public class ConversationFragment extends Fragment implements ServerListener, Co
      * On server status update
      */
     @Override
-    public void onStatusUpdate() {
+    public void onStatusUpdate()
+    {
+        getActivity().invalidateOptionsMenu();
+
         if (server.isConnected()) {
             input.setEnabled(true);
         } else {
