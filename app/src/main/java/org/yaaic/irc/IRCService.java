@@ -21,8 +21,6 @@ along with Yaaic.  If not, see <http://www.gnu.org/licenses/>.
  */
 package org.yaaic.irc;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -50,6 +48,7 @@ import android.app.Service;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.SystemClock;
+import android.support.v4.app.NotificationCompat;
 
 /**
  * The background service for managing the irc connections
@@ -69,13 +68,6 @@ public class IRCService extends Service
     private static final int NOTIFICATION_LED_ON_MS = 300;
     private static final int NOTIFICATION_LED_COLOR = 0xff00ff00;
 
-    @SuppressWarnings("rawtypes")
-    private static final Class[] mStartForegroundSignature = new Class[] { int.class, Notification.class };
-    @SuppressWarnings("rawtypes")
-    private static final Class[] mStopForegroundSignature = new Class[] { boolean.class };
-    @SuppressWarnings("rawtypes")
-    private static final Class[] mSetForegroudSignaure = new Class[] { boolean.class };
-
     private final IRCBinder binder;
     private final HashMap<Integer, IRCConnection> connections;
     private boolean foreground = false;
@@ -84,10 +76,6 @@ public class IRCService extends Service
     private int newMentions = 0;
 
     private NotificationManager notificationManager;
-    private Method mStartForeground;
-    private Method mStopForeground;
-    private final Object[] mStartForegroundArgs = new Object[2];
-    private final Object[] mStopForegroundArgs = new Object[1];
     private Notification notification;
     private Settings settings;
 
@@ -122,13 +110,6 @@ public class IRCService extends Service
         settings = new Settings(getBaseContext());
         notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
-        try {
-            mStartForeground = getClass().getMethod("startForeground", mStartForegroundSignature);
-            mStopForeground = getClass().getMethod("stopForeground", mStopForegroundSignature);
-        } catch (NoSuchMethodException e) {
-            // Running on an older platform.
-            mStartForeground = mStopForeground = null;
-        }
 
         // Broadcast changed server list
         sendBroadcast(new Intent(Broadcast.SERVER_UPDATE));
@@ -144,25 +125,6 @@ public class IRCService extends Service
         return settings;
     }
 
-    /**
-     * On start (will be called on pre-2.0 platform. On 2.0 or later onStartCommand()
-     * will be called)
-     */
-    @Override
-    public void onStart(Intent intent, int startId)
-    {
-        super.onStart(intent, startId);
-        handleCommand(intent);
-    }
-
-    /**
-     * On start command (Android >= 2.0)
-     *
-     * @param intent
-     * @param flags
-     * @param startId
-     * @return
-     */
     @Override
     public int onStartCommand(Intent intent, int flags, int startId)
     {
@@ -172,8 +134,7 @@ public class IRCService extends Service
 
         // We want this service to continue running until it is explicitly
         // stopped, so return sticky.
-        //return START_STICKY;
-        return 1;
+        return START_STICKY;
     }
 
 
@@ -190,81 +151,94 @@ public class IRCService extends Service
             }
             foreground = true;
 
-            // Set the icon, scrolling text and timestamp
-            notification = new Notification(R.drawable.ic_notification, getText(R.string.notification_running), System.currentTimeMillis());
-
-            // The PendingIntent to launch our activity if the user selects this notification
-            Intent notifyIntent = new Intent(this, MainActivity.class);
-            notifyIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notifyIntent, 0);
-
-            // Set the info for the views that show in the notification panel.
-            notification.setLatestEventInfo(this, getText(R.string.app_name), getText(R.string.notification_not_connected), contentIntent);
-
-            startForegroundCompat(FOREGROUND_NOTIFICATION, notification);
+            notification = buildNotification(getText(R.string.notification_running), getText(R.string.notification_not_connected), false, false, false);
+            startForeground(FOREGROUND_NOTIFICATION, notification);
         } else if (ACTION_BACKGROUND.equals(intent.getAction()) && !foreground) {
-            stopForegroundCompat(FOREGROUND_NOTIFICATION);
+            stopForeground(true);
         } else if (ACTION_ACK_NEW_MENTIONS.equals(intent.getAction())) {
             ackNewMentions(intent.getIntExtra(EXTRA_ACK_SERVERID, -1), intent.getStringExtra(EXTRA_ACK_CONVTITLE));
         }
     }
 
     /**
-     * Update notification and vibrate and/or flash a LED light if needed
+     * Update the notification and vibrate and/or flash a LED light if needed.
      *
-     * @param text       The ticker text to display
-     * @param contentText       The text to display in the notification dropdown
-     * @param vibrate True if the device should vibrate, false otherwise
-     * @param sound True if the device should make sound, false otherwise
-     * @param light True if the device should flash a LED light, false otherwise
+     * @param text          The ticker text to display.
+     * @param contentText   The text to display in the notification dropdown.
+     * @param vibrate       True if the device should vibrate, false otherwise.
+     * @param sound         True if the device should make sound, false otherwise.
+     * @param light         True if the device should flash a LED light, false otherwise.
      */
     private void updateNotification(String text, String contentText, boolean vibrate, boolean sound, boolean light)
     {
         if (foreground) {
-            notification = new Notification(R.drawable.ic_notification, text, System.currentTimeMillis());
-            Intent notifyIntent = new Intent(this, MainActivity.class);
-            notifyIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notifyIntent, 0);
-
-            if (contentText == null) {
-                if (newMentions >= 1) {
-                    StringBuilder sb = new StringBuilder();
-                    for (Conversation conv : mentions.values()) {
-                        sb.append(conv.getName() + " (" + conv.getNewMentions() + "), ");
-                    }
-                    contentText = getString(R.string.notification_mentions, sb.substring(0, sb.length()-2));
-                } else if (!connectedServerTitles.isEmpty()) {
-                    StringBuilder sb = new StringBuilder();
-                    for (String title : connectedServerTitles) {
-                        sb.append(title + ", ");
-                    }
-                    contentText = getString(R.string.notification_connected, sb.substring(0, sb.length()-2));
-                } else {
-                    contentText = getString(R.string.notification_not_connected);
-                }
-            }
-
-            notification.setLatestEventInfo(this, getText(R.string.app_name), contentText, contentIntent);
-
-            if (vibrate) {
-                notification.defaults |= Notification.DEFAULT_VIBRATE;
-            }
-
-            if (sound) {
-                notification.defaults |= Notification.DEFAULT_SOUND;
-            }
-
-            if (light) {
-                notification.ledARGB   = NOTIFICATION_LED_COLOR;
-                notification.ledOnMS   = NOTIFICATION_LED_ON_MS;
-                notification.ledOffMS  = NOTIFICATION_LED_OFF_MS;
-                notification.flags    |= Notification.FLAG_SHOW_LIGHTS;
-            }
-
-            notification.number = newMentions;
-
+            notification = buildNotification(text, contentText, vibrate, sound, light);
             notificationManager.notify(FOREGROUND_NOTIFICATION, notification);
         }
+    }
+
+    /**
+     * Build the notification with {@link android.support.v4.app.NotificationCompat.Builder}.
+     *
+     * @param text          The ticker text to display.
+     * @param contentText   The text to display in the notification dropdown.
+     * @param vibrate       True if the device should vibrate, false otherwise.
+     * @param sound         True if the device should make sound, false otherwise.
+     * @param light         True if the device should flash a LED light, false otherwise.
+     */
+    private Notification buildNotification(CharSequence text, CharSequence contentText, boolean vibrate, boolean sound, boolean light) {
+        int defaults = 0;
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
+
+        // Set the icon, scrolling text and timestamp.
+        builder.setTicker(text);
+        builder.setSmallIcon(R.drawable.ic_notification);
+        builder.setWhen(System.currentTimeMillis());
+
+        // The PendingIntent to launch our activity if the user selects this notification.
+        Intent notifyIntent = new Intent(this, MainActivity.class);
+        notifyIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notifyIntent, 0);
+
+        if (contentText == null) {
+            if (newMentions >= 1) {
+                StringBuilder sb = new StringBuilder();
+                for (Conversation conv : mentions.values()) {
+                    sb.append(conv.getName() + " (" + conv.getNewMentions() + "), ");
+                }
+                contentText = getString(R.string.notification_mentions, sb.substring(0, sb.length()-2));
+            } else if (!connectedServerTitles.isEmpty()) {
+                StringBuilder sb = new StringBuilder();
+                for (String title : connectedServerTitles) {
+                    sb.append(title + ", ");
+                }
+                contentText = getString(R.string.notification_connected, sb.substring(0, sb.length()-2));
+            } else {
+                contentText = getString(R.string.notification_not_connected);
+            }
+        }
+
+        // Set the info for the views that show in the notification panel.
+        builder.setContentTitle(getText(R.string.app_name));
+        builder.setContentText(contentText);
+        builder.setContentIntent(contentIntent);
+
+        if (vibrate) {
+            defaults |= Notification.DEFAULT_VIBRATE;
+        }
+
+        if (sound) {
+            defaults |= Notification.DEFAULT_SOUND;
+        }
+
+        if (light) {
+            builder.setLights(NOTIFICATION_LED_COLOR, NOTIFICATION_LED_ON_MS, NOTIFICATION_LED_OFF_MS);
+        }
+
+        builder.setDefaults(defaults);
+        builder.setNumber(newMentions);
+        
+        return builder.build();
     }
 
     /**
@@ -347,77 +321,6 @@ public class IRCService extends Service
     {
         connectedServerTitles.remove(title);
         updateNotification(getString(R.string.notification_disconnected, title), null, false, false, false);
-    }
-
-
-    /**
-     * This is a wrapper around the new startForeground method, using the older
-     * APIs if it is not available.
-     */
-    private void startForegroundCompat(int id, Notification notification)
-    {
-        // If we have the new startForeground API, then use it.
-        if (mStartForeground != null) {
-            mStartForegroundArgs[0] = Integer.valueOf(id);
-            mStartForegroundArgs[1] = notification;
-            try {
-                mStartForeground.invoke(this, mStartForegroundArgs);
-            } catch (InvocationTargetException e) {
-                // Should not happen.
-            } catch (IllegalAccessException e) {
-                // Should not happen.
-            }
-        } else {
-            // Fall back on the old API.
-            try {
-                Method setForeground = getClass().getMethod("setForeground", mSetForegroudSignaure);
-                setForeground.invoke(this, new Object[] { true });
-            } catch (NoSuchMethodException exception) {
-                // Should not happen
-            } catch (InvocationTargetException e) {
-                // Should not happen.
-            } catch (IllegalAccessException e) {
-                // Should not happen.
-            }
-
-            notificationManager.notify(id, notification);
-        }
-    }
-
-    /**
-     * This is a wrapper around the new stopForeground method, using the older
-     * APIs if it is not available.
-     */
-    public void stopForegroundCompat(int id)
-    {
-        foreground = false;
-
-        // If we have the new stopForeground API, then use it.
-        if (mStopForeground != null) {
-            mStopForegroundArgs[0] = Boolean.TRUE;
-            try {
-                mStopForeground.invoke(this, mStopForegroundArgs);
-            } catch (InvocationTargetException e) {
-                // Should not happen.
-            } catch (IllegalAccessException e) {
-                // Should not happen.
-            }
-        } else {
-            // Fall back on the old API.  Note to cancel BEFORE changing the
-            // foreground state, since we could be killed at that point.
-            notificationManager.cancel(id);
-
-            try {
-                Method setForeground = getClass().getMethod("setForeground", mSetForegroudSignaure);
-                setForeground.invoke(this, new Object[] { true });
-            } catch (NoSuchMethodException exception) {
-                // Should not happen
-            } catch (InvocationTargetException e) {
-                // Should not happen.
-            } catch (IllegalAccessException e) {
-                // Should not happen.
-            }
-        }
     }
 
     /**
@@ -592,7 +495,7 @@ public class IRCService extends Service
 
         if (shutDown) {
             foreground = false;
-            stopForegroundCompat(R.string.app_name);
+            stopForeground(true);
             stopSelf();
         }
     }
@@ -605,7 +508,7 @@ public class IRCService extends Service
     {
         // Make sure our notification is gone.
         if (foreground) {
-            stopForegroundCompat(R.string.app_name);
+            stopForeground(true);
         }
 
         AlarmManager am = (AlarmManager) getSystemService(ALARM_SERVICE);
