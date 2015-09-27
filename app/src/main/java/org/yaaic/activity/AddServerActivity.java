@@ -107,13 +107,19 @@ public class AddServerActivity extends ActionBarActivity implements OnClickListe
             setTitle(R.string.edit_server_label);
 
             // Request to edit an existing server
-            Database db = new Database(this);
-            this.server = db.getServerById(extras.getInt(Extra.SERVER));
-            aliases.addAll(server.getIdentity().getAliases());
-            this.channels = db.getChannelsByServerId(server.getId());
-            this.commands = db.getCommandsByServerId(server.getId());
-            this.authentication = server.getAuthentication();
-            db.close();
+
+            Database db = null;
+            try {
+                db = new Database(this);
+
+                this.server = db.getServerById(extras.getInt(Extra.SERVER));
+                aliases.addAll(server.getIdentity().getAliases());
+                this.channels = db.getChannelsByServerId(server.getId());
+                this.commands = db.getCommandsByServerId(server.getId());
+                this.authentication = server.getAuthentication();
+            } finally {
+                Database.close(db);
+            }
 
             // Set server values
             ((EditText) findViewById(R.id.title)).setText(server.getTitle());
@@ -256,25 +262,32 @@ public class AddServerActivity extends ActionBarActivity implements OnClickListe
      */
     private void addServer()
     {
-        Database db = new Database(this);
-
-        Identity identity = getIdentityFromView();
-        long identityId = db.addIdentity(
-            identity.getNickname(),
-            identity.getIdent(),
-            identity.getRealName(),
-            identity.getAliases()
-            );
-
         Server server = getServerFromView();
         server.setAuthentication(authentication);
+        Identity identity = getIdentityFromView();
 
-        long serverId = db.addServer(server, (int) identityId);
+        long serverId;
+        Database db = null;
+        try {
+            db = new Database(this);
+            db.beginTransition();
 
-        db.setChannels((int) serverId, channels);
-        db.setCommands((int) serverId, commands);
+            long identityId = db.addIdentity(
+                    identity.getNickname(),
+                    identity.getIdent(),
+                    identity.getRealName(),
+                    identity.getAliases()
+                    );
 
-        db.close();
+            serverId = db.addServer(server, (int) identityId);
+
+            db.setChannels((int) serverId, channels);
+            db.setCommands((int) serverId, commands);
+
+            db.setTransactionSuccessful();
+        } finally {
+            Database.closeWithTransaction(db);
+        }
 
         server.setId((int) serverId);
         server.setIdentity(identity);
@@ -289,28 +302,35 @@ public class AddServerActivity extends ActionBarActivity implements OnClickListe
      */
     private void updateServer()
     {
-        Database db = new Database(this);
-
-        int serverId = this.server.getId();
-        int identityId = db.getIdentityIdByServerId(serverId);
-
         Server server = getServerFromView();
         server.setAuthentication(authentication);
-        db.updateServer(serverId, server, identityId);
-
         Identity identity = getIdentityFromView();
-        db.updateIdentity(
-            identityId,
-            identity.getNickname(),
-            identity.getIdent(),
-            identity.getRealName(),
-            identity.getAliases()
+
+        Database db = null;
+        try {
+            db = new Database(this);
+            db.beginTransition();
+
+            int serverId = this.server.getId();
+            int identityId = db.getIdentityIdByServerId(serverId);
+
+            db.updateServer(serverId, server, identityId);
+
+            db.updateIdentity(
+                identityId,
+                identity.getNickname(),
+                identity.getIdent(),
+                identity.getRealName(),
+                identity.getAliases()
             );
 
-        db.setChannels(serverId, channels);
-        db.setCommands(serverId, commands);
+            db.setChannels(serverId, channels);
+            db.setCommands(serverId, commands);
 
-        db.close();
+            db.setTransactionSuccessful();
+        } finally {
+            Database.closeWithTransaction(db);
+        }
 
         server.setId(this.server.getId());
         server.setIdentity(identity);
@@ -404,12 +424,16 @@ public class AddServerActivity extends ActionBarActivity implements OnClickListe
             throw new ValidationException(getResources().getString(R.string.validation_unsupported_charset));
         }
 
-        Database db = new Database(this);
-        if (db.isTitleUsed(title) && (server == null || !server.getTitle().equals(title))) {
-            db.close();
-            throw new ValidationException(getResources().getString(R.string.validation_title_used));
+        Database db = null;
+        try {
+            db = new Database(this);
+
+            if (db.isTitleUsed(title) && (server == null || !server.getTitle().equals(title))) {
+                throw new ValidationException(getResources().getString(R.string.validation_title_used));
+            }
+        } finally {
+            Database.close(db);
         }
-        db.close();
     }
 
     /**

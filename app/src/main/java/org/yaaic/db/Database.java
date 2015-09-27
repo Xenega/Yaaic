@@ -250,9 +250,9 @@ public class Database extends SQLiteOpenHelper
     {
         // Remove old channels
         this.getWritableDatabase().delete(
-            ChannelConstants.TABLE_NAME,
-            ChannelConstants.SERVER + " = " + serverId,
-            null
+                ChannelConstants.TABLE_NAME,
+                ChannelConstants.SERVER + " = " + serverId,
+                null
         );
 
         // Add new channels
@@ -692,5 +692,58 @@ public class Database extends SQLiteOpenHelper
         }
 
         return identityId;
+    }
+
+    /**
+     * Start a transaction.
+     *
+     * @see SQLiteDatabase#beginTransaction()
+     */
+    public void beginTransition()
+    {
+        this.getWritableDatabase().beginTransaction();
+    }
+
+    /**
+     * Marks the current transaction as successful.
+     *
+     * @see SQLiteDatabase#setTransactionSuccessful()
+     */
+    public void setTransactionSuccessful()
+    {
+        this.getWritableDatabase().setTransactionSuccessful();
+    }
+
+    /**
+     * Quietly close the database.
+     *
+     * @param db The database.
+     */
+    public static void close(Database db)
+    {
+        if (db != null) {
+            try {
+                db.close();
+            } catch (Exception e) { /* quietly close... */ }
+        }
+    }
+
+    /**
+     * Quietly end the transaction and close the database.
+     *
+     * @param db The database.
+     *
+     * @see SQLiteDatabase#endTransaction()
+     */
+    public static void closeWithTransaction(Database db)
+    {
+        if (db != null) {
+            try {
+                db.getWritableDatabase().endTransaction();
+            } catch (Exception e) { /* quietly end transition... */ }
+            try {
+                db.close();
+            } catch (Exception e) { /* quietly close... */ }
+        }
     }
 }
